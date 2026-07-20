@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.auth/
+reports/allure-results/*
+reports/html/*
+reports/junit/*
+reports/screenshots/*
+reports/traces/*
+reports/videos/*
+reports/visual_diffs/*
+logs/*.log*
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
