@@ -1,0 +1,46 @@
+default: &default
+  browser: chromium
+  headless: true
+  viewport:
+    width: 1920
+    height: 1080
+  timeout_ms: 30000
+  navigation_timeout_ms: 45000
+  retries: 1
+  screenshot_on_failure: true
+  video_on_failure: true
+  trace_on_failure: true
+  slow_mo_ms: 0
+
+qa:
+  <<: *default
+  base_url: "https://www.saucedemo.com"
+  api_base_url: "https://reqres.in/api"
+  db:
+    host: "qa-db.internal.example.com"
+    port: 5432
+    name: "qa_automation"
+    driver: "postgresql"
+
+staging:
+  <<: *default
+  base_url: "https://staging.example.com"
+  api_base_url: "https://staging-api.example.com"
+  headless: true
+  db:
+    host: "staging-db.internal.example.com"
+    port: 5432
+    name: "staging_automation"
+    driver: "postgresql"
+
+prod:
+  <<: *default
+  base_url: "https://www.example.com"
+  api_base_url: "https://api.example.com"
+  headless: true
+  retries: 2
+  db:
+    host: "prod-readonly-db.internal.example.com"
+    port: 5432
+    name: "prod_readonly"
+    driver: "postgresql"
