@@ -1,0 +1,9 @@
+- slug: sauce-labs-backpack
+  name: Sauce Labs Backpack
+  expected_price: 29.99
+- slug: sauce-labs-bike-light
+  name: Sauce Labs Bike Light
+  expected_price: 9.99
+- slug: sauce-labs-bolt-t-shirt
+  name: Sauce Labs Bolt T-Shirt
+  expected_price: 15.99
