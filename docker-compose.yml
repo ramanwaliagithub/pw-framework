@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  automation:
+    build: .
+    image: pw-framework:latest
+    environment:
+      TEST_ENV: ${TEST_ENV:-qa}
+      HEADLESS: "true"
+      BASE_URL: ${BASE_URL:-https://www.saucedemo.com}
+      API_BASE_URL: ${API_BASE_URL:-https://reqres.in/api}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - ./reports:/app/reports
+      - ./logs:/app/logs
+    command: ["-m", "smoke", "--alluredir=reports/allure-results"]
+    depends_on:
+      - db
+
+  # Local Postgres for DB-layer tests/dev — not used against real qa/staging/prod DBs.
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: qa_automation
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  allure-report:
+    image: frankescobar/allure-docker-service
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 5
+      KEEP_HISTORY: 1
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./reports/allure-results:/app/allure-results
+      - ./reports/allure-history:/app/default-reports
