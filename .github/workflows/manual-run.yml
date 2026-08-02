@@ -1,0 +1,63 @@
+name: Manual Test Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "qa"
+        type: choice
+        options: [qa, staging, prod]
+      marker:
+        description: "Pytest marker expression (e.g. smoke, regression, 'smoke or api')"
+        required: true
+        default: "smoke"
+        type: string
+      browser:
+        description: "Browser to run against"
+        required: true
+        default: "chromium"
+        type: choice
+        options: [chromium, firefox, webkit]
+      workers:
+        description: "Parallel workers (xdist -n value)"
+        required: false
+        default: "auto"
+        type: string
+
+jobs:
+  manual-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Install Playwright browser
+        run: uv run playwright install --with-deps ${{ inputs.browser }}
+
+      - name: Run selected tests
+        env:
+          TEST_ENV: ${{ inputs.environment }}
+          BROWSER: ${{ inputs.browser }}
+          APP_USERNAME: ${{ secrets.APP_USERNAME }}
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+        run: >
+          uv run pytest -m "${{ inputs.marker }}" -n ${{ inputs.workers }}
+          --alluredir=reports/allure-results
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-run-${{ inputs.environment }}-${{ inputs.browser }}-${{ github.run_number }}
+          path: reports/allure-results
+          retention-days: 14

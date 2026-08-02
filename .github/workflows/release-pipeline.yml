@@ -1,0 +1,63 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  full-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Install Playwright browsers
+        run: uv run playwright install --with-deps chromium firefox webkit
+
+      - name: Run full suite (smoke + regression + api)
+        env:
+          TEST_ENV: staging
+          APP_USERNAME: ${{ secrets.APP_USERNAME }}
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+        run: >
+          uv run pytest -n auto --reruns 2
+          -m "smoke or regression or api"
+          --alluredir=reports/allure-results
+
+      - name: Upload release validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ github.ref_name }}-report
+          path: reports/allure-results
+          retention-days: 90
+
+  tag-release:
+    needs: full-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            ✅ Full regression suite passed on staging prior to this tag.
+            See attached Allure artifacts on the `full-validation` job for details.
+
+      - name: Notify Slack
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"🚀 Release ${{ github.ref_name }} validated and tagged.\"}" \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"
