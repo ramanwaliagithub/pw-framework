@@ -1,0 +1,39 @@
+name: Scheduled Smoke (Prod Sanity)
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"  # every 2 hours — cheap enough to run often, catches prod outages fast
+  workflow_dispatch: {}
+
+jobs:
+  prod-sanity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --locked --all-extras --dev
+
+      - name: Install Playwright (chromium only — fast sanity, not full matrix)
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run sanity-tagged tests against prod
+        env:
+          TEST_ENV: prod
+          APP_USERNAME: ${{ secrets.PROD_READONLY_USERNAME }}
+          APP_PASSWORD: ${{ secrets.PROD_READONLY_PASSWORD }}
+        run: uv run pytest -m sanity -n auto --reruns 1
+
+      - name: Alert on-call if prod sanity fails
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"🔥 PROD sanity check failed — possible production issue. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}" \
+            "${{ secrets.SLACK_WEBHOOK_URL }}"
