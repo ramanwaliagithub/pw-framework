@@ -1,8 +1,11 @@
 name: Nightly Regression
 
 on:
-  schedule:
-    - cron: "0 21 * * *"  # 21:00 UTC == 02:30 IST — off-peak for the target user base
+  # schedule:
+  #   - cron: "0 21 * * *"  # 21:00 UTC == 02:30 IST — off-peak for the target user base
+  # Paused: no live staging environment/secrets configured yet, so scheduled
+  # runs fail every night and GitHub auto-emails the repo owner. Re-enable
+  # once TEST_ENV=staging is actually reachable with valid credentials.
   workflow_dispatch: {}     # allow manual trigger too
 
 jobs:

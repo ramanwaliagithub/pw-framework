@@ -1,8 +1,11 @@
 name: Scheduled Smoke (Prod Sanity)
 
 on:
-  schedule:
-    - cron: "0 */2 * * *"  # every 2 hours — cheap enough to run often, catches prod outages fast
+  # schedule:
+  #   - cron: "0 */2 * * *"  # every 2 hours — cheap enough to run often, catches prod outages fast
+  # Paused: no live prod environment/secrets configured yet, so scheduled
+  # runs fail every 2 hours and GitHub auto-emails the repo owner. Re-enable
+  # once TEST_ENV=prod is actually reachable with valid credentials.
   workflow_dispatch: {}
 
 jobs:
